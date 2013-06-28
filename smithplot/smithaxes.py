@@ -1102,7 +1102,7 @@ class SmithAxes(Axes):
                 def new_draw_markers(self_renderer, gc, marker_path, marker_trans, path, trans, rgbFace=None):
                     # get the drawn path for determin the rotation angle
                     line_vertices = self_line._get_transformed_path().get_fully_transformed_path().vertices
-                    if len(line_vertices > 1) and rotate:
+                    if len(line_vertices) > 1 and rotate:
                         dx, dy = np.array(line_vertices[-1]) - np.array(line_vertices[-2])
                         end_rot = MarkerStyle(end.get_marker())
                         end_rot._transform += Affine2D().rotate(np.arctan2(dy, dx) - np.pi / 2)
