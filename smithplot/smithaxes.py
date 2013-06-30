@@ -690,6 +690,10 @@ class SmithAxes(Axes):
             - Extra keywords are added.
         
         Extra keyword arguments:
+        
+            *no_transform*:
+                If set, given data points are plotted directly, without 
+                transforming them into smith space. 
             
             *path_interpolation*:
                 If set, interpolates the path with the given steps.  If the 
@@ -734,10 +738,21 @@ class SmithAxes(Axes):
         else:
             rotate_marker = self._get_key("plot.rotatemarker")
 
+        if "no_transform" in kwargs:
+            no_transform = kwargs.pop("no_transform")
+        else:
+            no_transform = False
+
         lines = Axes.plot(self, *new_args, **kwargs)
         for line in lines:
+            if no_transform:
+                x, y = line.get_data()
+                z = self._moebius_inv_z(x + y * 1j)
+                line.set_data(z.real, z.imag)
+            
             if steps is not None:
                 line.get_path()._interpolation_steps = steps
+                
             if markerhack:
                 self._hack_linedraw(line, rotate_marker)
 
