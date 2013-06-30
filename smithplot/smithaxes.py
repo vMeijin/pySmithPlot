@@ -23,10 +23,10 @@ Example:
     import smithplot
     from matplotlib import pyplot as pp
     ax = pp.subplot('111', projection='smith')
-    ax.update_scParams(grid_major_edgecolor='b')
+    ax.update_scParams(grid_major_color='b')
     ax.cla()
     ## or in short form direct
-    #ax = pp.subplot('111', projection='smith', grid_major_edgecolor='b')
+    #ax = pp.subplot('111', projection='smith', grid_major_color='b')
     pp.plot([1, 1], [0, 1])
     pp.show()
     
@@ -55,6 +55,9 @@ from types import MethodType, FunctionType
 import matplotlib as mp
 import numpy as np
 import smithhelper
+from matplotlib.offsetbox import DrawingArea
+from matplotlib.legend_handler import HandlerLine2D
+import types
 
 
 def get_rcParams():
@@ -142,7 +145,7 @@ def update_scParams(sc_dict={}, instance=None, **kwargs):
             Major gridline width.
             Accepts: float
             
-        grid.major.edgecolor: '0.2'
+        grid.major.color: '0.2'
             Major gridline color.
             Accepts: matplotlib color
             
@@ -176,7 +179,7 @@ def update_scParams(sc_dict={}, instance=None, **kwargs):
             Minor gridline width.
             Accepts: float
             
-        grid.minor.edgecolor: 0.4
+        grid.minor.color: 0.4
             Minor gridline color.
             Accepts: matplotlib color
             
@@ -323,7 +326,7 @@ class SmithAxes(Axes):
                    "ytick.major.pad": 10,
                    "legend.fancybox": False,
                    "legend.shadow": True,
-                   "legend.markerscale": 0.1,
+                   "legend.markerscale": 0.75,
                    "legend.numpoints": 3,
                    "axes.axisbelow": True}
 
@@ -334,21 +337,22 @@ class SmithAxes(Axes):
                 "plot.startmarker": "s",
                 "plot.marker": "o",
                 "plot.endmarker": "^",
-                "legend.markersize": 7,
                    "grid.zorder" : 1,
                    "grid.locator.precision": 2,
                    "grid.major.enable": True,
-                   "grid.major.linestyle": 'solid',
+                   "grid.major.linestyle": '-',
                    "grid.major.linewidth": 1,
-                   "grid.major.edgecolor": "0.2",
+                   "grid.major.color": "0.2",
                    "grid.major.xmaxn": 10,
                    "grid.major.ymaxn": 16,
                    "grid.major.fancy": True,
                    "grid.major.fancy.threshold": (100, 50),
                    "grid.minor.enable": True,
-                   "grid.minor.linestyle": (0, (0.2, 2)),
+                   "grid.minor.linestyle": ":",
+                   "grid.minor.capstyle": str("round"),
+                   "grid.minor.dashes": [0.2, 2],
                    "grid.minor.linewidth": 0.75,
-                   "grid.minor.edgecolor": "0.4",
+                   "grid.minor.color": "0.4",
                    "grid.minor.xauto": 4,
                    "grid.minor.yauto": 4,
                    "grid.minor.fancy": True,
@@ -379,7 +383,7 @@ class SmithAxes(Axes):
 
         # get parameter for Axes and remove from kwargs
         axes_kwargs = {}
-        for key in kwargs:
+        for key in kwargs.copy():
             key_dot = key.replace("_", ".")
             if not (key_dot in self.scParams or \
                     key_dot in self._rcDefaultParams):
@@ -660,31 +664,19 @@ class SmithAxes(Axes):
         angs = np.angle(self._moebius_z(np.array(y) * 1j)) % TWO_PI
         i_angs = linear_interpolation(angs, steps)
         return np.imag(self._moebius_inv_z(ang_to_c(i_angs)))
-
+    
     def legend(self, *args, **kwargs):
-        def find_marker_lines(obj):
-            # Recursive function for finding all Line2D objects which contain
-            # markers. There is no easy way, because get_lines() only gives
-            # the handle for the original lines, but the markers are stored in
-            # another Line2D object, not accessible.
-            if isinstance(obj, Line2D) and obj.get_marker() and \
-                                           obj.get_linestyle() == "None":
-                return [obj]
-            else:
-                result = []
-                if hasattr(obj, "get_children"):
-                    for child in obj.get_children():
-                        result += find_marker_lines(child)
-                return result
-
-        legend = Axes.legend(self, *args, **kwargs)
-
-        # update marker lines in legend if lines are hacked
-        if self._get_key("plot.hacklines"):
-            for line in find_marker_lines(legend):
-                self._hack_linedraw(line, markersize=self._get_key("legend.markersize"))
-
-        return legend
+        this_axes = self
+        class SmithHandlerLine2D(HandlerLine2D):
+            def create_artists(self, legend, orig_handle, 
+                xdescent, ydescent, width, height, fontsize, 
+                trans):
+                legline, legline_marker = HandlerLine2D.create_artists(self, legend, orig_handle, xdescent, ydescent, width, height, fontsize, trans)
+                
+                if hasattr(orig_handle, "_markerhacked"):
+                    this_axes._hack_linedraw(legline_marker, True)
+                return [legline, legline_marker]
+        return Axes.legend(self, *args, handler_map={Line2D : SmithHandlerLine2D()}, **kwargs)
 
     def plot(self, *args, **kwargs):
         '''
@@ -860,7 +852,7 @@ class SmithAxes(Axes):
             if 'zorder' not in kw:
                 kw['zorder'] = self._get_key("grid.zorder")
 
-            for key in ["linestyle", "linewidth", "edgecolor"]:
+            for key in ["linestyle", "linewidth", "color"]:
                 if key not in kw:
                     kw[key] = self._get_key("grid.%s.%s" % (grid, key))
 
@@ -912,6 +904,10 @@ class SmithAxes(Axes):
 
             if b:
                 param = update_param("minor")
+                if "dash_capstyle" not in param:
+                    param["dash_capstyle"] = self._get_key("grid.minor.capstyle")
+                if "dashes" not in param:
+                    param["dashes"] = self._get_key("grid.minor.dashes")
 
                 if fancy_minor:
                     # 1. Step: get x/y grid data
@@ -1079,7 +1075,7 @@ class SmithAxes(Axes):
                 else:
                     draw_standard(xticks, yticks, param, self._fancy_majorarcs)
 
-    def _hack_linedraw(self, line, rotate_marker=None, markersize=None):
+    def _hack_linedraw(self, line, rotate_marker=None):
         '''
         Modifies the draw method of a :class:`matplotlib.lines.Line2D` object
         to draw different stard and end marker.
@@ -1097,129 +1093,110 @@ class SmithAxes(Axes):
         '''
         assert isinstance(line, Line2D)
 
-        def create_draw(line, rotate, size):
-            def new_draw(self_line, renderer):
-                def new_draw_markers(self_renderer, gc, marker_path, marker_trans, path, trans, rgbFace=None):
-                    # get the drawn path for determin the rotation angle
-                    line_vertices = self_line._get_transformed_path().get_fully_transformed_path().vertices
-                    if len(line_vertices) > 1 and rotate:
+        def new_draw(self_line, renderer):
+            def new_draw_markers(self_renderer, gc, marker_path, marker_trans, path, trans, rgbFace=None):
+                # get the drawn path for determin the rotation angle
+                line_vertices = self_line._get_transformed_path().get_fully_transformed_path().vertices
+                vertices = path.vertices
+
+                if len(vertices) == 1:
+                    line_set = [[default_marker, vertices]]
+                else:
+                    if rotate_marker:
                         dx, dy = np.array(line_vertices[-1]) - np.array(line_vertices[-2])
                         end_rot = MarkerStyle(end.get_marker())
                         end_rot._transform += Affine2D().rotate(np.arctan2(dy, dx) - np.pi / 2)
                     else:
                         end_rot = end
-
-                    vertices = path.vertices
-
-                    if len(vertices) == 1:
-                        line_set = [[default_marker, vertices]]
-                    elif len(vertices) == 2:
+                    
+                    if len(vertices) == 2:
                         line_set = [[start, vertices[0:1]], [end_rot, vertices[1:2]]]
                     else:
                         line_set = [[start, vertices[0:1]], [default_marker, vertices[1:-1]], [end_rot, vertices[-1:]]]
 
-                    for marker, points in line_set:
-                        scale = 0.5 if isinstance(marker.get_marker(), np.ndarray) else 1
-                        transform = marker.get_transform() + Affine2D().scale(scale * size)
-                        old_draw_markers(gc, marker.get_path(), transform, Path(points), trans, rgbFace)
+                for marker, points in line_set:
+                    scale = 0.5 if isinstance(marker.get_marker(), np.ndarray) else 1
+                    transform = marker.get_transform() + Affine2D().scale(scale * self_line._markersize)
+                    old_draw_markers(gc, marker.get_path(), transform, Path(points), trans, rgbFace)
 
-                old_draw_markers = renderer.draw_markers
-                renderer.draw_markers = MethodType(new_draw_markers, renderer)
-                old_draw(renderer)
-                renderer.draw_markers = old_draw_markers
+            old_draw_markers = renderer.draw_markers
+            renderer.draw_markers = MethodType(new_draw_markers, renderer)
+            old_draw(renderer)
+            renderer.draw_markers = old_draw_markers
 
-            default_marker = line._marker
-            # check if marker is set and visible
-            if default_marker:
-                start = MarkerStyle(self._get_key("plot.startmarker"))
-                if start.get_marker() is None:
-                    start = default_marker
+        default_marker = line._marker
+        # check if marker is set and visible
+        if default_marker:
+            start = MarkerStyle(self._get_key("plot.startmarker"))
+            if start.get_marker() is None:
+                start = default_marker
 
-                end = MarkerStyle(self._get_key("plot.endmarker"))
-                if end.get_marker() is None:
-                    end = default_marker
+            end = MarkerStyle(self._get_key("plot.endmarker"))
+            if end.get_marker() is None:
+                end = default_marker
 
-                if rotate is None:
-                    rotate = self._get_key("plot.rotatemarker")
+            if rotate_marker is None:
+                rotate_marker = self._get_key("plot.rotatemarker")
 
-                if size is None:
-                    size = line._markersize
-
-                old_draw = line.draw
-
-                # return MethodType for bound method
-                return MethodType(new_draw, line)
-            else:
-                return line.draw
-
-        line.draw = create_draw(line, rotate_marker, markersize)
+            old_draw = line.draw
+            line.draw = MethodType(new_draw, line)
+            line._markerhacked = True
 
     def add_realarc(self, xs, y0, y1, **kwargs):
-        '''
-        Add an arc for a real axis circle.
-        
-        Keyword arguments:
-        
-            *xs*:
-                Real axis value
-                Accepts: float
-                
-            *y0*:
-                Start point xs + y0 * 1j
-                Accepts: float
-                
-            *y1*:
-                End Poit xs + y1 * 1j
-                Accepts: float
-                
-            **kwargs*:
-                Keywords passed to the arc creator
-        '''
         assert xs >= 0
-        m = 0.5 * (1 + self._moebius_z(xs))
-        d = 2 * (1 - m)
-        ang0 = np.angle(self._moebius_z(xs + y1 * 1j) - m, deg=True) % 360
-        ang1 = np.angle(self._moebius_z(xs + y0 * 1j) - m, deg=True) % 360
-        arc = Arc([m, 0], d, d, theta1=ang0, theta2=ang1, transform=self.transMoebius, **kwargs)
-
-        self.add_artist(arc)
-        return arc
+            
+        return self.add_artist(Line2D(2 * [xs], [y0, y1], **kwargs), path_interpolation='inf_circle')
+#         '''
+#         Add an arc for a real axis circle.
+#         
+#         Keyword arguments:
+#         
+#             *xs*:
+#                 Real axis value
+#                 Accepts: float
+#                 
+#             *y0*:
+#                 Start point xs + y0 * 1j
+#                 Accepts: float
+#                 
+#             *y1*:
+#                 End Poit xs + y1 * 1j
+#                 Accepts: float
+#                 
+#             **kwargs*:
+#                 Keywords passed to the arc creator
+#         '''
 
     def add_imagarc(self, ys, x0, x1, **kwargs):
-        '''
-        Add an arc for a real axis circle.
-        
-        Keyword arguments:
-        
-            *ys*:
-                Imaginary axis value
-                Accepts: float
-                
-            *x0*:
-                Start point x0 + ys * 1j
-                Accepts: float
-                
-            *x1*:
-                End Poit x1 + ys * 1j
-                Accepts: float
-                
-            **kwargs*:
-                Keywords passed to the arc creator
-        '''
+#         '''
+#         Add an arc for a real axis circle.
+#         
+#         Keyword arguments:
+#         
+#             *ys*:
+#                 Imaginary axis value
+#                 Accepts: float
+#                 
+#             *x0*:
+#                 Start point x0 + ys * 1j
+#                 Accepts: float
+#                 
+#             *x1*:
+#                 End Poit x1 + ys * 1j
+#                 Accepts: float
+#                 
+#             **kwargs*:
+#                 Keywords passed to the arc creator
+#         '''
         assert x0 >= 0 and x1 >= 0
+        
         if abs(ys) > EPSILON:
-            m = self._scale / ys
-            d = abs(2 * m)
-            ang0 = np.angle(self._moebius_z(x0 + ys * 1j) - (1 + m * 1j), deg=True) % 360
-            ang1 = np.angle(self._moebius_z(x1 + ys * 1j) - (1 + m * 1j), deg=True) % 360
-            if ys < 0:
-                ang0, ang1 = ang1, ang0
-            arc = Arc([1, m], d, d, theta1=ang0, theta2=ang1, transform=self.transMoebius, **kwargs)
+            steps = 'inf_circle'
         else:
-            arc = patches.PathPatch(Path([[x0, ys], [x1, ys]], [Path.MOVETO, Path.LINETO], 1), **kwargs)
-
-        self.add_artist(arc)
-        return arc
+            steps = 1
+            
+        return self.add_artist(Line2D([x0, x1], 2 * [ys], **kwargs), path_interpolation=steps)
+        
 
     def add_artist(self, a, path_interpolation=None):
         '''
@@ -1275,42 +1252,81 @@ class SmithAxes(Axes):
 
             x, y = np.array(zip(*vertices))
 
-            if len(vertices) > 1 and steps == 0:
-                z = self._axes._moebius_z(x + y * 1j)
-                new_vertices = []
-                new_codes = []
+            if len(vertices) > 1 and not isinstance(steps, types.IntType):
+                if steps == 'inf_circle':
+                    z = x + y * 1j
+                    new_vertices = []
+                    new_codes = []
+    
+                    for i in range(len(z) - 1):
+                        az = self._axes._moebius_z(0.5 * (z[i] + z[i+1]))
+                        zz = self._axes._moebius_z(z[i:i+2])
+                        ax, ay = az.real, az.imag
+                        bz, cz = zz
+                        bx, cx = zz.real - ax
+                        by, cy = zz.imag - ay
+                        
+                        k = 2 * (bx * cy - by * cx)
+                        xm = (cy * (bx ** 2 + by ** 2) - by * (cx ** 2 + cy ** 2)) / k + ax
+                        ym = (bx * (cx ** 2 + cy ** 2) - cx * (bx ** 2 + by ** 2)) / k + ay
+        
+                        zm = xm + ym * 1j
+                        d = 2 * abs(zm - az)
+    
+                        ang0 = np.angle(bz - zm, deg=True) % 360
+                        ang1 = np.angle(cz - zm, deg=True) % 360
+    
+                        reverse = ang0 > ang1
+                        if reverse:
+                            ang0, ang1 = ang1, ang0
+                            
+                        arc = Arc([xm, ym], d, d, theta1=ang0, theta2=ang1, transform=self._axes.transMoebius)
+                        arc_path = arc.get_patch_transform().transform_path(arc.get_path())
+    
+                        if reverse:
+                            new_vertices.append(arc_path.vertices[::-1])
+                        else:
+                            new_vertices.append(arc_path.vertices)
+    
+                        new_codes.append(arc_path.codes)
+                            
+                    new_vertices = np.concatenate(new_vertices)
+                    new_codes = np.concatenate(new_codes)
+                elif steps == 'center_circle':
+                    points = self._axes._get_key("path.default_interpolation")
+                    
+                    z = self._axes._moebius_z(x + y * 1j)
 
-                for i in range(len(z) - 1):
-                    bz, cz = z[i:i + 2]
-                    bx, cx = np.real(z[i:i + 2]) - 1
-                    by, cy = np.imag(z[i:i + 2])
+                    ang0, ang1 = np.angle(z[0:2]) % TWO_PI
+                    ccw = (ang1 - ang0) % TWO_PI < np.pi
+    
+                    ix, iy = [np.real(z[0])], [np.imag(z[0])]
+                    new_codes = [Path.MOVETO]
+    
+                    for i in range(len(z) - 1):
+                        zz = z[i:i + 2]
+                        
+                        r0, r1 = np.abs(zz)
+                        ang0, ang1 = np.angle(zz) % TWO_PI
 
-                    k = 2 * (bx * cy - by * cx)
-                    xm = (cy * (bx ** 2 + by ** 2) - by * (cx ** 2 + cy ** 2)) / k + 1
-                    ym = (bx * (cx ** 2 + cy ** 2) - cx * (bx ** 2 + by ** 2)) / k
+                        if ccw:
+                            if ang0 > ang1:
+                                ang1 += TWO_PI
+                        else:
+                            if ang1 > ang0:
+                                ang0 += TWO_PI
+    
+                        r = np.linspace(r0, r1, points)[1:]
+                        ang = np.linspace(ang0, ang1, points)[1:]
 
-                    zm = xm + ym * 1j
-                    d = 2 * abs(zm - 1)
-
-                    ang0 = np.angle(bz - zm, deg=True) % 360
-                    ang1 = np.angle(cz - zm, deg=True) % 360
-
-                    reverse = ang0 > ang1
-                    if reverse:
-                        ang0, ang1 = ang1, ang0
-
-                    arc = Arc([xm, ym], d, d, theta1=ang0, theta2=ang1, transform=self._axes.transMoebius)
-                    arc_path = arc.get_patch_transform().transform_path(arc.get_path())
-
-                    if reverse:
-                        new_vertices.append(arc_path.vertices[::-1])
-                    else:
-                        new_vertices.append(arc_path.vertices)
-
-                    new_codes.append(arc_path.codes)
-
-                new_vertices = np.concatenate(new_vertices)
-                new_codes = np.concatenate(new_codes)
+                        ix += list(np.cos(ang) * r)
+                        iy += list(np.sin(ang) * r)
+    
+                        new_codes += (points - 1) * [Path.LINETO]
+    
+                    new_vertices = zip(ix, iy)
+                else:
+                    raise ValueError("Interpolation must be either an integer, 'inf_circle' or 'center_circle'")
             else:
                 ix, iy = ([x[0:1]], [y[0:1]])
                 for i in range(len(x) - 1):
