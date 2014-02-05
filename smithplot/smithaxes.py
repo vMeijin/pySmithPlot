@@ -1603,7 +1603,7 @@ class SmithAxes(Axes):
             self._axes = axes
 
         def __call__(self, x, pos=None):
-            if x < EPSILON:
+            if x < EPSILON or x > self._axes._near_inf:
                 return ""
             else:
                 return ('%f' % x).rstrip('0').rstrip('.')
@@ -1640,7 +1640,7 @@ class SmithAxes(Axes):
                 
 __author__ = "Paul Staerke"
 __copyright__ = "Copyright 2013, Paul Staerke"
-__license__ = "GPL"
+__license__ = "BSD"
 __version__ = "0.1"
 __maintainer__ = "Paul Staerke"
 __email__ = "paul.staerke@gmail.com"
