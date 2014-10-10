@@ -1,4 +1,4 @@
-import csv
+#import csv
 import numpy as np
 
 INF = 1e9
@@ -80,6 +80,10 @@ def vswr_rotation(x, y, impedance=1, real=None, imag=None, lambda_rotation=None,
     else:
         raise ValueError("side has to be 'clockwise' or 'counterclockwise', resp. 'cw' or 'ccw'")
 
+    #TODO: Does these default cases for invert, ang, and ang_0 make sense?
+    invert = False
+    ang_0 = 0.0
+    ang = 0.0
     check = 0
     z = x + y * 1j
     z0 = moebius_z(z, impedance)
