@@ -53,7 +53,7 @@ update_scParams({"init.updaterc": True,
 
 FT = [False, True]
 
-build_all = True
+build_all = False
 build_path = "./build/"
         
 
@@ -236,7 +236,7 @@ def make_misc():
     pp.legend(["S11", "S22", "Polyline", "Z \u2192 0.125l/\u03BB"])
     pp.title("Legend")
 
-    divs = [2, 5]
+    divs = [5, 2]
     pp.subplot(2, 2, 2, projection="smith",
                grid_minor_fancy=True,
                grid_minor_fancy_dividers=divs)
@@ -253,7 +253,7 @@ def make_misc():
     plot_example()
     pp.title("Infinity symbol: 'inf'")
 
-    pp.savefig(build_path + "ex_misc.pdf", format="pdf")
+    #pp.savefig(build_path + "ex_misc.pdf", format="pdf")
 
 
 
@@ -281,7 +281,7 @@ if __name__ == '__main__':
 #         make_markers()
 #         make_circle()
 #         make_interpolation()
-        make_misc()
-        # pp.show()
+	  make_misc()
+          pp.show()
 
 print "finish"
