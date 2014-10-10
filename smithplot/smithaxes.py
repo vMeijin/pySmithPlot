@@ -38,7 +38,7 @@ Example:
 
 from __future__ import division, unicode_literals
 from collections import Iterable
-from matplotlib import patches
+#from matplotlib import patches
 from matplotlib.axes import Axes
 from matplotlib.cbook import \
     simple_linear_interpolation as linear_interpolation
@@ -55,7 +55,7 @@ from types import MethodType, FunctionType
 import matplotlib as mp
 import numpy as np
 import smithhelper
-from matplotlib.offsetbox import DrawingArea
+#from matplotlib.offsetbox import DrawingArea
 from matplotlib.legend_handler import HandlerLine2D
 import types
 
@@ -70,7 +70,7 @@ def get_scParams():
     return SmithAxes.scParams
 
 
-def update_scParams(sc_dict={}, instance=None, **kwargs):
+def update_scParams(sc_dict=None, instance=None, **kwargs):
     '''
     Method for updating the standard SmithAxes parameter. If no instance is 
     given, the changes are global, but only affect instances created 
@@ -256,6 +256,8 @@ def update_scParams(sc_dict={}, instance=None, **kwargs):
     Note: The keywords are processed after the dictionary and override 
     possible double entries.
     '''
+    if not sc_dict:
+        sc_dict = {}
     assert isinstance(sc_dict, dict)
 
     key_error = lambda k: KeyError("key '%s' is not in scParams" % k)
@@ -424,9 +426,11 @@ class SmithAxes(Axes):
         else:
             raise KeyError("%s is not a valid key" % key)
 
-    def update_scParams(self, sc_dict={}, **kwargs):
+    def update_scParams(self, sc_dict=None, **kwargs):
         '''Updates the local parameter of this instance. 
         For more details see :func:`update_scParams`'''
+        if not sc_dict:
+            sc_dict = {}
         update_scParams(sc_dict=sc_dict, instance=self, **kwargs)
 
     def _init_axis(self):
@@ -544,7 +548,8 @@ class SmithAxes(Axes):
     def _gen_axes_patch(self):
         return Circle((0.5, 0.5), self._get_key("axes.radius") + 0.015)
 
-    def _gen_axes_spines(self):
+    #TODO: RPC: I added arguments here to match with the matploblib Axes base class. Need to make sure this works.
+    def _gen_axes_spines(self, locations=None, offset=0.0, units='inches'):
         return {SmithAxes.name: Spine.circular_spine(self, (0.5, 0.5), self._get_key("axes.radius"))}
 
     def set_xscale(self, *args, **kwargs):
@@ -575,6 +580,7 @@ class SmithAxes(Axes):
     def can_zoom(self):
         return False
 
+    #TODO: Does this need to do something?
     def start_pan(self, x, y, button):
         pass
 #         x, _ = self.transData.inverted().transform([[x, y]])[0]
@@ -583,6 +589,7 @@ class SmithAxes(Axes):
 #             if hasattr(a, "_transformed_path"):
 #                 a._transformed_path.invalidate()
 
+    #TODO: Do either of these need to do something?
     def end_pan(self):
         pass
 
@@ -758,6 +765,7 @@ class SmithAxes(Axes):
 
         return lines
 
+    #TODO: Does impedance need to do something?
     def plot_vswr_circle(self,
                          point,
                          impedance=None,
@@ -1573,6 +1581,7 @@ class SmithAxes(Axes):
             assert n > 0
             AutoMinorLocator.__init__(self, n=n)
             if n is None:
+                #TODO: is _get_key valid?
                 self.ndivs = self._get_key("grid.minor.xauto")
             self._ticks = None
 
