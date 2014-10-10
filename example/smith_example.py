@@ -53,7 +53,7 @@ update_scParams({"init.updaterc": True,
 
 FT = [False, True]
 
-build_all = False
+build_all = True
 build_path = "./build/"
         
 
@@ -227,33 +227,34 @@ def make_interpolation():
 
     pp.savefig(build_path + "ex_interp.pdf", format="pdf")
 
-def make_misc():
-    fig = pp.figure(figsize=(16, 16))
-    fig.set_tight_layout(True)
+#TODO: find bug when drawing minor_fancy_dividers
+#def make_misc():
+    #fig = pp.figure(figsize=(16, 16))
+    #fig.set_tight_layout(True)
 
-    pp.subplot(2, 2, 1, projection="smith", plot_hacklines=True)
-    plot_example()
-    pp.legend(["S11", "S22", "Polyline", "Z \u2192 0.125l/\u03BB"])
-    pp.title("Legend")
+    #pp.subplot(2, 2, 1, projection="smith", plot_hacklines=True)
+    #plot_example()
+    #pp.legend(["S11", "S22", "Polyline", "Z \u2192 0.125l/\u03BB"])
+    #pp.title("Legend")
 
-    divs = [5, 2]
-    pp.subplot(2, 2, 2, projection="smith",
-               grid_minor_fancy=True,
-               grid_minor_fancy_dividers=divs)
-    plot_example()
-    pp.title("Minor fancy dividers=%s" % divs)
+    #divs = [2, 5]
+    #pp.subplot(2, 2, 2, projection="smith",
+               #grid_minor_fancy=True,
+               #grid_minor_fancy_dividers=divs)
+    #plot_example()
+    #pp.title("Minor fancy dividers=%s" % divs)
 
-    pp.subplot(2, 2, 3, projection="smith", axes_radius=0.25)
-    plot_example()
-    pp.title("Axes radius: 0.25")
+    #pp.subplot(2, 2, 3, projection="smith", axes_radius=0.25)
+    #plot_example()
+    #pp.title("Axes radius: 0.25")
 
-    pp.subplot(2, 2, 4, projection="smith",
-               symbol_infinity="inf",
-               symbol_infinity_correction=0)
-    plot_example()
-    pp.title("Infinity symbol: 'inf'")
+    #pp.subplot(2, 2, 4, projection="smith",
+               #symbol_infinity="inf",
+               #symbol_infinity_correction=0)
+    #plot_example()
+    #pp.title("Infinity symbol: 'inf'")
 
-    #pp.savefig(build_path + "ex_misc.pdf", format="pdf")
+    ##pp.savefig(build_path + "ex_misc.pdf", format="pdf")
 
 
 
@@ -282,6 +283,6 @@ if __name__ == '__main__':
 #         make_circle()
 #         make_interpolation()
 	  make_misc()
-          pp.show()
+#         pp.show()
 
 print "finish"
