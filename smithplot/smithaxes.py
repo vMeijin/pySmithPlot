@@ -718,8 +718,9 @@ class SmithAxes(Axes):
         '''
         new_args = ()
         for arg in args:
-            if isinstance(arg, np.ndarray) and arg.dtype == np.complex \
-               or isinstance(arg, complex):
+            if isinstance(arg, np.ndarray) and arg.dtype == np.complex or \
+               isinstance(arg, np.ndarray) and arg.dtype == np.float or \
+               isinstance(arg, complex) or isinstance(arg, float):
                 new_args += (np.real(arg), np.imag(arg))
             else:
                 new_args += (arg,)
