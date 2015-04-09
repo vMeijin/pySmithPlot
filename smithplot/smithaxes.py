@@ -718,8 +718,9 @@ class SmithAxes(Axes):
         '''
         new_args = ()
         for arg in args:
-            if isinstance(arg, np.ndarray) and arg.dtype == np.complex \
-               or isinstance(arg, complex):
+            if isinstance(arg, np.ndarray) and arg.dtype == np.complex or \
+               isinstance(arg, np.ndarray) and arg.dtype == np.float or \
+               isinstance(arg, complex) or isinstance(arg, float):
                 new_args += (np.real(arg), np.imag(arg))
             else:
                 new_args += (arg,)
@@ -1351,9 +1352,9 @@ class SmithAxes(Axes):
                 else:
                     raise ValueError("Interpolation must be either an integer, 'inf_circle' or 'center_circle'")
             else:
-		if steps == 0:
-		    steps = self._axes._get_key("path.default_interpolation")
-	      
+                if steps == 0:
+                    steps = self._axes._get_key("path.default_interpolation")
+
                 ix, iy = ([x[0:1]], [y[0:1]])
                 for i in range(len(x) - 1):
                     x0, x1 = x[i:i + 2]
