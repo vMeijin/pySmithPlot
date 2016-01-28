@@ -12,18 +12,18 @@ def parseCSV(nameIn, startRow=0, endRow=1e36, steps=1, transpose=False, cSymbol=
     reader = csv.reader(open("%s.csv" % nameIn, "r"))
     r = 0
     while r < startRow:  # skip first rows
-        reader.next()
+        next(reader)
         r += 1
 
     while r < endRow:  # read rows till end
         try:
             tmp = []
-            for x in reader.next():
+            for x in next(reader):
                 tmp.append(complex(x.replace(" ", "").replace(cSymbol, "j")) if cSymbol in x else float(x))
             data.append(tmp)
 
             for _ in range(steps):
-                reader.next();
+                next(reader);
 
             r += steps
         except:
