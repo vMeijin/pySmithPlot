@@ -266,7 +266,7 @@ if __name__ == '__main__':
             time.sleep(0.5)
         os.makedirs(build_path)
 
-        p = Pool(pool.cpu_count())
+        p = Pool(os.cpu_count())
         r = []
         for key, func in locals().copy().items():
             if isinstance(func, FunctionType) and "make_" in key:
