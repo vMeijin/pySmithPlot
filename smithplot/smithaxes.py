@@ -490,7 +490,7 @@ class SmithAxes(Axes):
         norm = self._get_key("axes.norm")
         if norm is not None:
             x, y = split_complex(self._moebius_inv_z(-1 - 1j))
-            self._normbox = self.text(x, y, "Norm: %d\u2126" % norm)
+            self._normbox = self.text(x, y, "Norm: %d\u03A9" % norm)
             self._normbox.set_verticalalignment("center")
 
             px = self._get_key("ytick.major.pad")
