@@ -59,6 +59,7 @@ from . import smithhelper
 from matplotlib.legend_handler import HandlerLine2D
 import types
 
+from cycler import cycler
 
 def get_rcParams():
     '''Gets the default values for matploblib parameters'''
@@ -314,14 +315,14 @@ class SmithAxes(Axes):
                    "lines.linewidth": 2,
                    "lines.markersize": 8,
                    "lines.markeredgewidth": 1,
-                   "axes.color_cycle": ["FF4848", # red 
-                                        "31B404", # blue
-                                        "0276FD", # green
-                                        "FFB428", # orange
-                                        "01C5BB" , # teal
-                                        "CD69C9",  # pink
-                                        "0.65", # dark grey
-                                        "0.45"], # light grey
+                   "axes.prop_cycle": cycler('color', ['red', # red 
+                                        'blue', # blue
+                                        'green', # green
+                                        'orange', # orange
+                                        'teal' , # teal
+                                        'pink',  # pink
+                                        'darkgray', # dark grey
+                                        'lightgray']), # light grey
                    "xtick.labelsize": 14,
                    "xtick.major.pad": 0,
                    "ytick.labelsize": 15,
