@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import division, unicode_literals
+
 
 import sys
 from multiprocessing import pool
@@ -266,9 +266,9 @@ if __name__ == '__main__':
             time.sleep(0.5)
         os.makedirs(build_path)
 
-        p = Pool(pool.cpu_count())
+        p = Pool(os.cpu_count())
         r = []
-        for key, func in locals().copy().iteritems():
+        for key, func in locals().copy().items():
             if isinstance(func, FunctionType) and "make_" in key:
                 r += [p.apply_async(func, {})]
 
@@ -282,7 +282,7 @@ if __name__ == '__main__':
 #         make_markers()
 #         make_circle()
 #         make_interpolation()
-	  make_misc()
+        make_misc()
 #         pp.show()
 
-print "finish"
+print("finish")

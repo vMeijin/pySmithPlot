@@ -36,7 +36,7 @@ Example:
     parameters are array-like types (e.g. numpy.ndarray). 
 '''
 
-from __future__ import division, unicode_literals
+
 from collections import Iterable
 #from matplotlib import patches
 from matplotlib.axes import Axes
@@ -49,16 +49,17 @@ from matplotlib.path import Path
 from matplotlib.spines import Spine
 from matplotlib.ticker import Formatter, AutoMinorLocator, Locator
 from matplotlib.transforms import Affine2D, BboxTransformTo, Transform
-from smithhelper import EPSILON, TWO_PI, vswr_rotation, lambda_to_rad, ang_to_c, \
+from .smithhelper import EPSILON, TWO_PI, vswr_rotation, lambda_to_rad, ang_to_c, \
     split_complex, convert_args
 from types import MethodType, FunctionType
 import matplotlib as mp
 import numpy as np
-import smithhelper
+from . import smithhelper
 #from matplotlib.offsetbox import DrawingArea
 from matplotlib.legend_handler import HandlerLine2D
 import types
 
+from cycler import cycler
 
 def get_rcParams():
     '''Gets the default values for matploblib parameters'''
@@ -266,13 +267,13 @@ def update_scParams(sc_dict=None, instance=None, **kwargs):
     else:
         scParams = instance.scParams
 
-    for key, value in sc_dict.iteritems():
+    for key, value in sc_dict.items():
         if key in scParams:
             scParams[key] = value
         else:
             raise key_error(key)
 
-    for key, value in kwargs.iteritems():
+    for key, value in kwargs.items():
         key_dot = key.replace("_", ".")
         if key_dot in scParams:
             scParams[key_dot] = value
@@ -314,14 +315,14 @@ class SmithAxes(Axes):
                    "lines.linewidth": 2,
                    "lines.markersize": 8,
                    "lines.markeredgewidth": 1,
-                   "axes.color_cycle": ["FF4848", # red 
-                                        "31B404", # blue
-                                        "0276FD", # green
-                                        "FFB428", # orange
-                                        "01C5BB" , # teal
-                                        "CD69C9",  # pink
-                                        "0.65", # dark grey
-                                        "0.45"], # light grey
+                   "axes.prop_cycle": cycler('color', ['red', # red 
+                                        'blue', # blue
+                                        'green', # green
+                                        'orange', # orange
+                                        'teal' , # teal
+                                        'pink',  # pink
+                                        'darkgray', # dark grey
+                                        'lightgray']), # light grey
                    "xtick.labelsize": 14,
                    "xtick.major.pad": 0,
                    "ytick.labelsize": 15,
@@ -370,7 +371,7 @@ class SmithAxes(Axes):
                    "axes.radius": 0.43,
                    "axes.scale": 1,
                    "axes.norm": None,
-                   "symbol.infinity": u"\u221E",
+                   "symbol.infinity": "\u221E",
                    "symbol.infinity.correction": 7}
 
     def __init__(self, *args, **kwargs):
@@ -396,7 +397,7 @@ class SmithAxes(Axes):
         # if 'init.updaterc' is True, all matplotlib rc parameter
         # which are unmodified are updated to the Smith defaults
         if self._get_key("init.updaterc"):
-            for key, value in self._rcDefaultParams.iteritems():
+            for key, value in self._rcDefaultParams.items():
                 if mp.rcParams[key] == mp.rcParamsDefault[key]:
                     mp.rcParams[key] = value
 
@@ -490,7 +491,7 @@ class SmithAxes(Axes):
         norm = self._get_key("axes.norm")
         if norm is not None:
             x, y = split_complex(self._moebius_inv_z(-1 - 1j))
-            self._normbox = self.text(x, y, u"Norm: %d\u2126" % norm)
+            self._normbox = self.text(x, y, "Norm: %d\u03A9" % norm)
             self._normbox.set_verticalalignment("center")
 
             px = self._get_key("ytick.major.pad")
@@ -980,8 +981,8 @@ class SmithAxes(Axes):
 
                     # 3. Steps: optimize spacing
                     # ensure the x-spacing declines towards infinity
-                    d_mat[:-1, 0, 0] = map(np.max, zip(d_mat[:-1, 0, 0],
-                                                       d_mat[1:, 0, 0]))
+                    d_mat[:-1, 0, 0] = list(map(np.max, list(zip(d_mat[:-1, 0, 0],
+                                                       d_mat[1:, 0, 0]))))
 
                     # find the values which are near (0, 0.5) on the plot
                     idx = np.searchsorted(xticks,
@@ -1259,12 +1260,13 @@ class SmithAxes(Axes):
             self._axes = axes
 
         def transform_non_affine(self, data):
-            def _moebius_xy((x, y)):
+            def _moebius_xy(xxx_todo_changeme):
+                (x, y) = xxx_todo_changeme
                 w = self._axes._moebius_z(complex(x, y))
                 return [np.real(w), np.imag(w)]
 
             if isinstance(data[0], Iterable):
-                return map(_moebius_xy, data)
+                return list(map(_moebius_xy, data))
             else:
                 return _moebius_xy(data)
 
@@ -1273,9 +1275,9 @@ class SmithAxes(Axes):
             codes = path.codes
             steps = path._interpolation_steps
 
-            x, y = np.array(zip(*vertices))
+            x, y = np.array(list(zip(*vertices)))
 
-            if len(vertices) > 1 and not isinstance(steps, types.IntType):
+            if len(vertices) > 1 and not isinstance(steps, int):
                 if steps == 'inf_circle':
                     z = x + y * 1j
                     new_vertices = []
@@ -1347,12 +1349,12 @@ class SmithAxes(Axes):
     
                         new_codes += (points - 1) * [Path.LINETO]
     
-                    new_vertices = zip(ix, iy)
+                    new_vertices = list(zip(ix, iy))
                 else:
                     raise ValueError("Interpolation must be either an integer, 'inf_circle' or 'center_circle'")
             else:
-		if steps == 0:
-		    steps = self._axes._get_key("path.default_interpolation")
+                if steps == 0:
+                    steps = self._axes._get_key("path.default_interpolation")
 	      
                 ix, iy = ([x[0:1]], [y[0:1]])
                 for i in range(len(x) - 1):
@@ -1375,7 +1377,7 @@ class SmithAxes(Axes):
                 else:
                     new_codes = None
 
-                new_vertices = self.transform_non_affine(zip(np.concatenate(ix), np.concatenate(iy)))
+                new_vertices = self.transform_non_affine(list(zip(np.concatenate(ix), np.concatenate(iy))))
                 new_codes = codes
 
             return Path(new_vertices, new_codes, 1)
@@ -1398,11 +1400,12 @@ class SmithAxes(Axes):
             self._axes = axes
 
         def transform_non_affine(self, xy):
-            def _moebius_inv_xy((x, y)):
+            def _moebius_inv_xy(xxx_todo_changeme1):
+                (x, y) = xxx_todo_changeme1
                 w = self._axes._moebius_inv_z(complex(x, y))
                 return [np.real(w), np.imag(w)]
 
-            return map(_moebius_inv_xy, xy)
+            return list(map(_moebius_inv_xy, xy))
 
         def inverted(self):
             return SmithAxes.MoebiusTransform(self._axes)
@@ -1436,14 +1439,15 @@ class SmithAxes(Axes):
             self.font_size = font_size
 
         def transform_non_affine(self, xy):
-            def translate((x, y)):
+            def translate(xxx_todo_changeme2):
+                (x, y) = xxx_todo_changeme2
                 ang = np.angle(complex(x - x0, y - y0))
                 return [x + np.cos(ang) * (self.pad),
                         y + np.sin(ang) * (self.pad + 0.5 * self.font_size)]
 
             x0, y0 = self.axes.transAxes.transform([0.5, 0.5])
             if isinstance(xy[0], Iterable):
-                return map(translate, xy)
+                return list(map(translate, xy))
             else:
                 return translate(xy)
 
@@ -1591,9 +1595,9 @@ class SmithAxes(Axes):
         def __call__(self):
             if self._ticks is None:
                 majorticks = self.axis.get_majorticklocs()
-                linspace_mod = lambda (i0, i1): np.linspace(i0, i1, self.ndivs + 1)
-                intervals = zip(majorticks[:-1], majorticks[1:])
-                minorticks = np.concatenate(map(linspace_mod, intervals))
+                linspace_mod = lambda i0_i1: np.linspace(i0_i1[0], i0_i1[1], self.ndivs + 1)
+                intervals = list(zip(majorticks[:-1], majorticks[1:]))
+                minorticks = np.concatenate(list(map(linspace_mod, intervals)))
                 self._ticks = np.sort(np.concatenate([majorticks, minorticks]))
             return self._ticks
 
@@ -1645,7 +1649,7 @@ class SmithAxes(Axes):
                 return ("%f" % x).rstrip('0').rstrip('.') + "j"
 
     # update docstrings for all methode not set
-    for key, value in locals().copy().iteritems():
+    for key, value in locals().copy().items():
         if isinstance(value, FunctionType):
             if value.__doc__ is None and hasattr(Axes, key):
                 value.__doc__ = getattr(Axes, key).__doc__
