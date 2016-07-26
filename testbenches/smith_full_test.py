@@ -170,8 +170,7 @@ def tb_markers():
             else:
                 return "'%s'" % x
 
-        plot_example(tb, "HackLines: %s - StartMarker: %s\nEndMarker: %s - Rotate: %s" % tuple(map(ptype, [hackline, startmarker, endmarker, rotate_marker])), markevery=10,
-                     markersize=10)
+        plot_example(tb, "HackLines: %s - StartMarker: %s\nEndMarker: %s - Rotate: %s" % tuple(map(ptype, [hackline, startmarker, endmarker, rotate_marker])), markersize=10)
 
     savefig(tb)
 
@@ -258,9 +257,9 @@ if __name__ == '__main__':
         # tb_fancy_grids()
         # tb_grid_locators()
         # tb_normalize()
-        # plot_markers()
+        tb_markers()
         # tb_interpolation()
-        tb_misc()
+        # tb_misc()
         pp.show()
 
     print("build finished")
