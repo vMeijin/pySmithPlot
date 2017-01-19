@@ -110,8 +110,7 @@ class SmithAxes(Axes):
                        "grid.major.fancy": True,
                        "grid.major.fancy.threshold": (100, 50),
                        "grid.minor.enable": True,
-                       "grid.minor.linestyle": ":",
-                       "grid.minor.capstyle": str("round"),
+                       "grid.minor.capstyle": "round",
                        "grid.minor.dashes": [0.2, 2],
                        "grid.minor.linewidth": 0.75,
                        "grid.minor.color": "0.4",
@@ -121,12 +120,12 @@ class SmithAxes(Axes):
                        "grid.minor.fancy.dividers": [0, 1, 2, 3, 5, 10, 20],
                        "grid.minor.fancy.threshold": 25,
                        "axes.xlabel.rotation": 90,
-                       "axes.xlabel.fancybox": {"boxstyle": "round4,pad=0.3,rounding_size=0.2",
+                       "axes.xlabel.fancybox": {"boxstyle": "round,pad=0.2,rounding_size=0.2",
                                                 "facecolor": 'w',
                                                 "edgecolor": "w",
                                                 "mutation_aspect": 0.75,
                                                 "alpha": 1},
-                       "axes.ylabel.correction": (-1, 0),
+                       "axes.ylabel.correction": (-1, 0, 0),
                        "axes.radius": 0.44,
                        "axes.impedance": 50,
                        "axes.normalize": True,
@@ -240,9 +239,13 @@ class SmithAxes(Axes):
                 Enables the minor grid.
                 Accepts: boolean
 
-            grid.minor.linestyle: (0, (0.2, 2))
-                Minor gridline style.
-                Accepts: see matplotlib.patches.Patch.set_linestyle()
+            grid.minor.capstyle: 'round'
+                Minor dashes capstyle
+                Accepts: 'round', 'butt', 'miter', 'projecting'
+
+            grid.minor.dashes: (0.2, 2)
+                Minor gridline dash style.
+                Accepts: tuple
 
             grid.minor.linewidth: 0.75
                 Minor gridline width.
@@ -286,10 +289,10 @@ class SmithAxes(Axes):
                 FancyBboxPatch parameters for the x-label background box.
                 Accepts: dictionary with rectprops
 
-            axes.ylabel.correction: (-1, 0)
-                Correction for the labels of the imaginary axis. Usually needs to
-                be adapted when fontsize changes 'font.size'.
-                Accepts: (float, float)
+            axes.ylabel.correction: (-1, 0, 0)
+                Correction in x, y, and radial direction for the labels of the imaginary axis.
+                Usually needs to be adapted when fontsize changes 'font.size'.
+                Accepts: (float, float, float)
 
             axes.radius: 0.44
                 Radius of the plotting area. Usually needs to be adapted to
@@ -472,8 +475,9 @@ class SmithAxes(Axes):
     def _set_lim_and_transforms(self):
         r = self._get_key("axes.radius")
         self.transProjection = self.MoebiusTransform(self)  # data space  -> moebius space
-        self.transAffine = Affine2D().scale(r, r).translate(0.5, 0.5)  # moebius space -> figure space
-        self.transAxes = BboxTransformTo(self.bbox)  # figure space -> drawing space
+        self.transAffine = Affine2D().scale(r, r).translate(0.5, 0.5)  # moebius space -> axes space
+        self.transDataToAxes = self.transProjection + self.transAffine
+        self.transAxes = BboxTransformTo(self.bbox)  # axes space -> drawing space
         self.transMoebius = self.transAffine + self.transAxes
         self.transData = self.transProjection + self.transMoebius
 
@@ -482,7 +486,7 @@ class SmithAxes(Axes):
         self._xaxis_text1_transform = Affine2D().scale(1.0, 0.0) + self.transData
 
         self._yaxis_stretch = Affine2D().scale(self._ax_lim_x, 1.0)
-        self._yaxis_correction = self.transData + Affine2D().translate(*self._get_key("axes.ylabel.correction"))
+        self._yaxis_correction = self.transData + Affine2D().translate(*self._get_key("axes.ylabel.correction")[:2])
         self._yaxis_transform = self._yaxis_stretch + self.transData
         self._yaxis_text1_transform = self._yaxis_stretch + self._yaxis_correction
 
@@ -502,8 +506,9 @@ class SmithAxes(Axes):
             font_size = self.yaxis.majorTicks[0].label.get_size()
         else:
             font_size = self._get_key("font.size")
-        return self._yaxis_text1_transform + self.PolarTranslate(self, pad=pixelPad,
-                                                                 font_size=font_size), 'center', 'center'
+
+        offset = self._get_key("axes.ylabel.correction")[2]
+        return self._yaxis_text1_transform + self.PolarTranslate(self, pad=pixelPad + offset, font_size=font_size), 'center', 'center'
 
     def _gen_axes_patch(self):
         return Circle((0.5, 0.5), self._get_key("axes.radius") + 0.015)
@@ -704,15 +709,22 @@ class SmithAxes(Axes):
                 
         See :meth:`matplotlib.axes.Axes.plot` for mor details
         '''
-        # split input into real and imaginary part
+        # split input into real and imaginary part if complex
         new_args = ()
         for arg in args:
-            if isinstance(arg, Iterable):
-                arg = np.array(arg, dtype=np.complex)
-            elif isinstance(arg, Number):
-                arg = np.array([arg], dtype=np.complex)
+            # check if argument is a string or already an ndarray
+            # if not, try to convert to an ndarray
+            if not (isinstance(arg, str) or isinstance(arg, np.ndarray)):
+                try:
+                    if isinstance(arg, Iterable):
+                        arg = np.array(arg)
+                    elif isinstance(arg, Number):
+                        arg = np.array([arg])
+                except TypeError:
+                    pass
 
-            if isinstance(arg, np.ndarray):
+            # if (converted) arg is an ndarray of complex type, split it
+            if isinstance(arg, np.ndarray) and arg.dtype in [np.complex, np.complex128]:
                 new_args += z_to_xy(arg)
             else:
                 new_args += (arg,)
@@ -847,7 +859,12 @@ class SmithAxes(Axes):
             kw.setdefault("alpha", self._get_key("grid.alpha"))
 
             for key in ["linestyle", "linewidth", "color"]:
-                kw.setdefault(key, self._get_key("grid.%s.%s" % (grid, key)))
+                if grid == "minor" and key == "linestyle":
+                    if "linestyle" not in kw:
+                        kw.setdefault("dash_capstyle", self._get_key("grid.minor.capstyle"))
+                        kw.setdefault("dashes", self._get_key("grid.minor.dashes"))
+                else:
+                    kw.setdefault(key, self._get_key("grid.%s.%s" % (grid, key)))
 
             return kw
 
@@ -869,11 +886,13 @@ class SmithAxes(Axes):
 
             return thr_x / 1000, thr_y / 1000
 
-        def arc(ps, p0, p1, grid, type):
+        def add_arc(ps, p0, p1, grid, type):
             assert grid in ["major", "minor"]
             assert type in ["real", "imag"]
             assert p0 != p1
             arcs = self._majorarcs if grid == "major" else self._minorarcs
+            if grid == "minor":
+                param["zorder"] -= 1e-9
             arcs.append((type, (ps, p0, p1), self._add_gridline(ps, p0, p1, type, **param)))
 
         def draw_nonfancy(grid):
@@ -889,11 +908,11 @@ class SmithAxes(Axes):
 
             for xs in xticks:
                 if xs < self._near_inf:
-                    arc(xs, -self._near_inf, self._inf, grid, "real")
+                    add_arc(xs, -self._near_inf, self._inf, grid, "real")
 
             for ys in yticks:
                 if abs(ys) < self._near_inf:
-                    arc(ys, 0, self._inf, grid, "imag")
+                    add_arc(ys, 0, self._inf, grid, "imag")
 
         # set fancy parameters
         if fancy is None:
@@ -926,7 +945,7 @@ class SmithAxes(Axes):
                     thr_x, thr_y = split_threshold(threshold)
 
                     # draw the 0 line
-                    arc(yticks[0], 0, self._inf, "major", "imag")
+                    add_arc(yticks[0], 0, self._inf, "major", "imag")
 
                     tmp_yticks = yticks.copy()
                     for xs in xticks:
@@ -934,8 +953,8 @@ class SmithAxes(Axes):
                         while k < len(tmp_yticks):
                             y0, y1 = tmp_yticks[k - 1:k + 1]
                             if abs(self._moebius_z(xs, y0) - self._moebius_z(xs, y1)) < thr_x:
-                                arc(y1, 0, xs, "major", "imag")
-                                arc(-y1, 0, xs, "major", "imag")
+                                add_arc(y1, 0, xs, "major", "imag")
+                                add_arc(-y1, 0, xs, "major", "imag")
                                 tmp_yticks = np.delete(tmp_yticks, k)
                             else:
                                 k += 1
@@ -946,7 +965,7 @@ class SmithAxes(Axes):
                         while k < len(xticks):
                             x0, x1 = xticks[k - 1:k + 1]
                             if abs(self._moebius_z(x0, y1) - self._moebius_z(x1, y1)) < thr_y:
-                                arc(x1, -y0, y0, "major", "real")
+                                add_arc(x1, -y0, y0, "major", "real")
                                 xticks = np.delete(xticks, k)
                             else:
                                 k += 1
@@ -962,8 +981,6 @@ class SmithAxes(Axes):
 
             if b:
                 param = get_kwargs("minor")
-                param.setdefault("dash_capstyle", self._get_key("grid.minor.capstyle"))
-                param.setdefault("dashes", self._get_key("grid.minor.dashes"))
 
                 if fancy_minor:
                     # 1. Step: get x/y grid data
@@ -1070,7 +1087,7 @@ class SmithAxes(Axes):
                         ps, p0, p1 = lines[0]
                         for qs, q0, q1 in lines[1:]:
                             if ps != qs or p1 != q0:
-                                arc(ps, p0, p1, "minor", tp)
+                                add_arc(ps, p0, p1, "minor", tp)
                                 ps, p0, p1 = qs, q0, q1
                             else:
                                 p1 = q1
