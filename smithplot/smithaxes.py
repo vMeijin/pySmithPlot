@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# last edit: 11.04.2018
 '''
 Library for plotting fully automatic a Smith Chart with various customizable
 parameters and well selected default values. It also provides the following 
@@ -91,7 +92,7 @@ class SmithAxes(Axes):
     _ax_lim_y = 2 * _inf  # prevents missing labels in special cases
 
     # default parameter, see update_scParams for description
-    scDefaultParams = {"plot.zorder": 5,
+    scDefaultParams = {"plot.zorder": 4,
                        "plot.marker.hack": True,
                        "plot.marker.rotate": True,
                        "plot.marker.start": "s",
@@ -118,7 +119,7 @@ class SmithAxes(Axes):
                        "grid.minor.yauto": 4,
                        "grid.minor.fancy": True,
                        "grid.minor.fancy.dividers": [0, 1, 2, 3, 5, 10, 20],
-                       "grid.minor.fancy.threshold": 25,
+                       "grid.minor.fancy.threshold": 35,
                        "axes.xlabel.rotation": 90,
                        "axes.xlabel.fancybox": {"boxstyle": "round,pad=0.2,rounding_size=0.2",
                                                 "facecolor": 'w',
@@ -372,6 +373,9 @@ class SmithAxes(Axes):
         # seperate Axes parameter
         Axes.__init__(self, *args, **SmithAxes.update_scParams(instance=self, filter_dict=True, reset=False, **kwargs))
         self.set_aspect(1, adjustable='box', anchor='C')
+
+        # remove all ticks
+        self.tick_params(axis="both", which="both", bottom=False, top=False, left=False, right=False)
 
     def _get_key(self, key):
         '''
@@ -1248,6 +1252,7 @@ class SmithAxes(Axes):
                     ang0, ang1 = ang1, ang0
 
                 arc = Arc(z_to_xy(zm), d, d, theta1=ang0, theta2=ang1, transform=self._axes.transMoebius)
+                arc._path = Path.arc(ang0, ang1)  # fix for Matplotlib 2.1+
                 arc_path = arc.get_patch_transform().transform_path(arc.get_path())
 
                 if reverse:
@@ -1531,9 +1536,9 @@ class SmithAxes(Axes):
 
 
 __author__ = "Paul Staerke"
-__copyright__ = "Copyright 2016, Paul Staerke"
+__copyright__ = "Copyright 2018, Paul Staerke"
 __license__ = "BSD"
-__version__ = "0.2"
+__version__ = "0.3"
 __maintainer__ = "Paul Staerke"
 __email__ = "paul.staerke@gmail.com"
 __status__ = "Prototype"
