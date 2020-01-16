@@ -1061,11 +1061,11 @@ class SmithAxes(Axes):
 
                             x_div, y_div = d_mat[i, k]
 
-                            for xs in np.linspace(x0, x1, x_div + 1)[1:]:
+                            for xs in np.linspace(x0, x1, int(x_div + 1))[1:]:
                                 x_lines.append([xs, y0, y1])
                                 x_lines.append([xs, -y1, -y0])
 
-                            for ys in np.linspace(y0, y1, y_div + 1)[1:]:
+                            for ys in np.linspace(y0, y1, int(y_div + 1))[1:]:
                                 y_lines.append([ys, x0, x1])
                                 y_lines.append([-ys, x0, x1])
 
