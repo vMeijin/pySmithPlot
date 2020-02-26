@@ -1005,7 +1005,7 @@ class SmithAxes(Axes):
                     len_x, len_y = len(xticks) - 1, len(yticks) - 1
 
                     # 2. Step: calculate optimal gridspacing for each quadrant
-                    d_mat = np.ones((len_x, len_y, 2))
+                    d_mat = np.ones((len_x, len_y, 2), dtype=np.int)
 
                     # TODO: optimize spacing algorithm
                     for i in range(len_x):
