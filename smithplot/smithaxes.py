@@ -36,6 +36,8 @@ of all given parameters. This does not work always, especially if the
 parameters are array-like types (e.g. numpy.ndarray).
 '''
 
+from __future__ import division, print_function, unicode_literals
+
 from collections import Iterable
 from numbers import Number
 from types import MethodType, FunctionType
@@ -558,7 +560,7 @@ class SmithAxes(Axes):
     def drag_pan(self, button, key, x, y):
         pass
 
-    def _moebius_z(self, *args, normalize=None):
+    def _moebius_z(self, *args, **kw):
         '''
         Basic transformation. 
         
@@ -581,11 +583,12 @@ class SmithAxes(Axes):
                 Performs w = (z - k) / (z + k) with k = 'axes.scale' 
                 Type: Complex number or numpy.ndarray with dtype=complex
         '''
+        normalize = kw.get('normalize', None)
         normalize = self._normalize if normalize is None else normalize
         norm = 1 if normalize else self._impedance
         return smithhelper.moebius_z(*args, norm=norm)
 
-    def _moebius_inv_z(self, *args, normalize=None):
+    def _moebius_inv_z(self, *args, **kw):
         '''
         Basic inverse transformation. 
         
@@ -608,6 +611,7 @@ class SmithAxes(Axes):
                 Performs w = k * (1 - z) / (1 + z) with k = 'axes.scale' 
                 Type: Complex number or numpy.ndarray with dtype=complex
         '''
+        normalize = kw.get('normalize', None)
         normalize = self._normalize if normalize is None else normalize
         norm = 1 if normalize else self._impedance
         return smithhelper.moebius_inv_z(*args, norm=norm)
@@ -1005,7 +1009,7 @@ class SmithAxes(Axes):
                     len_x, len_y = len(xticks) - 1, len(yticks) - 1
 
                     # 2. Step: calculate optimal gridspacing for each quadrant
-                    d_mat = np.ones((len_x, len_y, 2))
+                    d_mat = np.ones((len_x, len_y, 2), dtype=np.int)
 
                     # TODO: optimize spacing algorithm
                     for i in range(len_x):

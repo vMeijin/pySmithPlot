@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # last edit: 11.04.2018
 
+from __future__ import division,  print_function, unicode_literals
+
 from collections import Iterable
 
 import numpy as np
@@ -38,13 +40,15 @@ def z_to_xy(z):
     return z.real, z.imag
 
 
-def moebius_z(*args, norm):
+def moebius_z(*args, **kw):
     z = xy_to_z(*args)
+    norm = kw['norm']
     return 1 - 2 * norm / (z + norm)
 
 
-def moebius_inv_z(*args, norm):
+def moebius_inv_z(*args, **kw):
     z = xy_to_z(*args)
+    norm = kw['norm']
     return norm * (1 + z) / (1 - z)
 
 
