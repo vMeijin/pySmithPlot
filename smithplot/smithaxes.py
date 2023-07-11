@@ -728,7 +728,7 @@ class SmithAxes(Axes):
                     pass
 
             # if (converted) arg is an ndarray of complex type, split it
-            if isinstance(arg, np.ndarray) and arg.dtype in [np.complex, np.complex128]:
+            if isinstance(arg, np.ndarray) and arg.dtype in [complex, np.complex128]: # np.complex -> complex (I hate this, it made me finally sign up to github)
                 new_args += z_to_xy(arg)
             else:
                 new_args += (arg,)
