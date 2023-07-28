@@ -129,6 +129,7 @@ class SmithAxes(Axes):
                        "axes.ylabel.correction": (-1, 0, 0),
                        "axes.radius": 0.44,
                        "axes.impedance": 50,
+                       "axes.labelpos": -1-1j,
                        "axes.normalize": True,
                        "axes.normalize.label": True,
                        "symbol.infinity": "∞ ",  # BUG: symbol gets cut off without end-space
@@ -304,6 +305,9 @@ class SmithAxes(Axes):
                 Defines the reference impedance for normalisation.
                 Accepts: float
 
+            axes.labelpos: -1-1j
+                Position of normalization label, see axes.normalize.label
+
             axes.normalize: True
                 If True, the Smith Chart is normalized to the reference impedance.
                 Accepts: boolean
@@ -466,7 +470,7 @@ class SmithAxes(Axes):
         self.xaxis.set_major_formatter(self.RealFormatter(self))
 
         if self._get_key("axes.normalize") and self._get_key("axes.normalize.label"):
-            x, y = z_to_xy(self._moebius_inv_z(-1 - 1j))
+            x, y = z_to_xy(self._moebius_inv_z(self._get_key("axes.labelpos")))
             box = self.text(x, y, "Z$_\mathrm{0}$ = %d$\,$%s" % (self._impedance, self._get_key("symbol.ohm")), ha="left", va="bottom")
 
             px = self._get_key("ytick.major.pad")
