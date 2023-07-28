@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 # last edit: 11.04.2018
 
-from collections import Iterable
+try:
+    from collections.abc import Iterable
+except ImportError:
+    from collections import Iterable
 
 import numpy as np
 
