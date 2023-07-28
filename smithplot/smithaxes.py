@@ -36,7 +36,10 @@ of all given parameters. This does not work always, especially if the
 parameters are array-like types (e.g. numpy.ndarray).
 '''
 
-from collections import Iterable
+try:
+    from collections.abc import Iterable
+except ImportError:
+    from collections import Iterable
 from numbers import Number
 from types import MethodType, FunctionType
 
