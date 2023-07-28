@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "pysmithplot"
+version         = "0.2.0"
+authors         = [{ name="Paul Staerke", email="paul.staerke@gmail.com" }, ]
+description     = "An extension for Matplotlib providing a projection class to generate high quality Smith Chart plots."
+readme          = 'README.md'
+license         = {text = 'BSD'}
+dependencies    = ["matplotlib >= 1.2.0", "numpy", "scipy"]
+
+[project.urls]
+"Homepage" = "https://github.com/vMeijin/pySmithPlot"
+"Bug Tracker" = "https://github.com/vMeijin/pySmithPlot/issues"
