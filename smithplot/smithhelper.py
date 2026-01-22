@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 # last edit: 11.04.2018
 
-from collections import Iterable
+# Changed by FG for python 3.10
+try:
+    from collections import Iterable
+except ImportError:
+    from collections.abc import Iterable
+
 
 import numpy as np
 

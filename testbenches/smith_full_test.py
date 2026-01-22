@@ -10,6 +10,21 @@ from types import FunctionType
 import numpy as np
 from matplotlib import rcParams, pyplot as pp
 
+
+def get_app_path() -> str:
+    """Gets Appliction path
+
+    Returns:
+        str: Application path
+    """
+    # determine if application is a script file or frozen exe
+    application_path = ""
+    if getattr(sys, "frozen", False):
+        application_path = os.path.dirname(sys.executable)
+    elif __file__:
+        application_path = os.path.dirname(__file__)
+    return application_path
+
 sys.path.append("..")
 from smithplot.smithaxes import SmithAxes
 from smithplot import smithhelper
@@ -19,10 +34,10 @@ rcParams.update({"legend.numpoints": 3,
 
 # sample data
 steps = 40
-data = np.loadtxt("data/s11.csv", delimiter=",", skiprows=1)[::steps]
+data = np.loadtxt(os.path.join(get_app_path(),"data/s11.csv"), delimiter=",", skiprows=1)[::steps]
 sp_data = data[:, 1] + data[:, 2] * 1j
 
-data = np.loadtxt("data/s22.csv", delimiter=",", skiprows=1)[::steps]
+data = np.loadtxt(os.path.join(get_app_path(),"data/s22.csv"), delimiter=",", skiprows=1)[::steps]
 z_data = 50 * (data[:, 1] + data[:, 2] * 1j)
 
 # default params
@@ -147,10 +162,10 @@ def tb_markers():
     i = 0
     for hackline, startmarker, endmarker, rotate_marker in [[False, None, None, False],
                                                             [True, "s", "^", False],
-                                                            [True, "s", None, False],
+                                                            [True, "s", 'None', False],
                                                             [True, VStartMarker, XEndMarker, False],
                                                             [True, "s", "^", True],
-                                                            [True, None, "^", False]]:
+                                                            [True, 'None', "^", False]]:
         i += 1
         ax = pp.subplot(2, 3, i, projection="smith",
                         plot_marker_hack=hackline,
@@ -232,7 +247,7 @@ def tb_misc():
 
 
 build_all = True
-build_path = "./build"
+build_path = os.path.join(get_app_path(),"build")
 
 if __name__ == '__main__':
     # clear and create path
@@ -263,3 +278,4 @@ if __name__ == '__main__':
         pp.show()
 
     print("build finished")
+    input("Press Enter to exit")

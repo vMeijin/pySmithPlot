@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# last edit: 11.04.2018
+# last edit: 10.06.2025
 '''
 Library for plotting fully automatic a Smith Chart with various customizable
 parameters and well selected default values. It also provides the following 
@@ -35,8 +35,15 @@ expected, because subplot uses an index for the axes with a key created
 of all given parameters. This does not work always, especially if the
 parameters are array-like types (e.g. numpy.ndarray).
 '''
+# changed by FG for python 3.10 
+# matplotlib==3.10.3
+# numpy==2.2.6
 
-from collections import Iterable
+try:
+    from collections import Iterable
+except ImportError:
+    from collections.abc import Iterable
+    
 from numbers import Number
 from types import MethodType, FunctionType
 
@@ -45,7 +52,7 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.axis import XAxis
 from matplotlib.cbook import simple_linear_interpolation as linear_interpolation
-from matplotlib.legend_handler import HandlerLine2D
+from matplotlib.legend_handler import HandlerLine2DCompound
 from matplotlib.lines import Line2D
 from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Circle, Arc
@@ -449,18 +456,18 @@ class SmithAxes(Axes):
                              self.yaxis.get_majorticklocs()):
             # workaround for fixing to small infinity symbol
             if abs(loc) > self._near_inf:
-                tick.label.set_size(tick.label.get_size() +
+                tick.label1.set_fontsize(tick.label1.get_fontsize() +
                                     self._get_key("symbol.infinity.correction"))
 
-            tick.label.set_verticalalignment('center')
+            tick.label1.set_verticalalignment('center')
 
             x = np.real(self._moebius_z(loc * 1j))
             if x < -0.1:
-                tick.label.set_horizontalalignment('right')
+                tick.label1.set_horizontalalignment('right')
             elif x > 0.1:
-                tick.label.set_horizontalalignment('left')
+                tick.label1.set_horizontalalignment('left')
             else:
-                tick.label.set_horizontalalignment('center')
+                tick.label1.set_horizontalalignment('center')
 
         self.yaxis.set_major_formatter(self.ImagFormatter(self))
         self.xaxis.set_major_formatter(self.RealFormatter(self))
@@ -507,7 +514,8 @@ class SmithAxes(Axes):
 
     def get_yaxis_text1_transform(self, pixelPad):
         if hasattr(self, 'yaxis') and len(self.yaxis.majorTicks) > 0:
-            font_size = self.yaxis.majorTicks[0].label.get_size()
+            #font_size = self.yaxis.majorTicks[0].label.get_size()
+            font_size = self.yaxis.majorTicks[0].label1.get_fontsize()
         else:
             font_size = self._get_key("font.size")
 
@@ -651,11 +659,11 @@ class SmithAxes(Axes):
     def legend(self, *args, **kwargs):
         this_axes = self
 
-        class SmithHandlerLine2D(HandlerLine2D):
+        class SmithHandlerLine2D(HandlerLine2DCompound):
             def create_artists(self, legend, orig_handle,
                                xdescent, ydescent, width, height, fontsize,
                                trans):
-                legline, legline_marker = HandlerLine2D.create_artists(self, legend, orig_handle, xdescent, ydescent,
+                legline, legline_marker = HandlerLine2DCompound.create_artists(self, legend, orig_handle, xdescent, ydescent,
                                                                        width, height, fontsize, trans)
 
                 if hasattr(orig_handle, "_markerhacked"):
@@ -728,7 +736,7 @@ class SmithAxes(Axes):
                     pass
 
             # if (converted) arg is an ndarray of complex type, split it
-            if isinstance(arg, np.ndarray) and arg.dtype in [np.complex, np.complex128]:
+            if isinstance(arg, np.ndarray) and arg.dtype in [complex, np.complex128]:
                 new_args += z_to_xy(arg)
             else:
                 new_args += (arg,)
@@ -1060,7 +1068,8 @@ class SmithAxes(Axes):
                             y0, y1 = yticks[k:k + 2]
 
                             x_div, y_div = d_mat[i, k]
-
+                            #print('*'*33+'\n',x0, x1, x_div, y0, y1, y_div)
+                            (x0, x1, x_div, y0, y1, y_div)=(float(x0), float(x1), int(x_div), float(y0), float(y1), int(y_div))
                             for xs in np.linspace(x0, x1, x_div + 1)[1:]:
                                 x_lines.append([xs, y0, y1])
                                 x_lines.append([xs, -y1, -y0])

@@ -8,7 +8,7 @@ def read(fname):
 
 
 setup(name="pysmithplot",
-      version="0.2.0",
+      version="0.2.2",
       packages=["smithplot"],
       description="An extension for Matplotlib providing a projection class to generate high quality Smith Chart plots.",
       long_description=read('README.md'),

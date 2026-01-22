@@ -71,3 +71,8 @@ For more details and documentation, take a look into `smithplot/smithaxes.py`.
 
 ![Miscellaneous](https://github.com/vMeijin/pySmithPlot/wiki/images/examples/sample_miscellaneous.png)
 [Miscellaneous - PDF](https://github.com/vMeijin/pySmithPlot/wiki/images/examples/sample_miscellaneous.pdf)
+
+## Library Installation
+
+Open as administrator a command prompt in the `pySmithplot` folder
+Run `python .\setup.py install_lib`
